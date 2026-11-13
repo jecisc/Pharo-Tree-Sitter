@@ -80,18 +80,16 @@ TSFASTAbstractImporter >> parse: aString [
 
 { #category : 'parsing' }
 TSFASTAbstractImporter >> parse: aString into: aModel [
-	"Import the source in the FAST model, or in a new one if the model is nil, and answer the model. A model given here is not remembered for incremental parsing: only the models created by #parse: are."
+	"Import the source in the FAST model given, or in a new one when it is nil, and answer the model. The entities of the source are moved into the model given, so that several sources can be imported in one model. A model given here is not remembered for incremental parsing."
 
-	| tsTree |
+	| tsTree fastModel |
 	aModel ifNil: [ ^ self parse: aString ].
 
 	self initialiseTreeSitterParser.
 	tsTree := self tsParser parseString: aString.
-	self visitorClass new
-		originString: aString;
-		in: [ :importer | errorReportBlock ifNotNil: [ importer errorReportBlock: errorReportBlock ] ];
-		import: tsTree rootNode into: aModel.
+	fastModel := self importToFAST: tsTree rootNode usingSourceCode: aString.
 	self deleteTreeSitterParser.
+	fastModel entities copy do: [ :entity | aModel add: entity ].
 	^ aModel
 ]
 
